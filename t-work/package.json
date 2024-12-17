@@ -2,10 +2,10 @@
   "name": "t-work",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "dev": "vite",
+    "serve": "vite preview",
     "build": "vite build",
+    "dev": "vite",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -18,12 +18,18 @@
     "bootstrap": "^5.3.3",
     "crypto-js": "^4.2.0",
     "firebase": "^10.12.2",
+    "roboto-fontface": "*",
+    "vite-plugin-vuetify": "^2.0.4",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0",
-    "vuetify": "^3.6.7"
+    "vuetify": "^3.7.0-beta.1",
+    "webfontloader": "^1.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
-    "vite": "^5.2.8"
-  }
+    "vite": "^6.0.2",
+    "vite-plugin-vuetify": "^1.0.0-alpha.12",
+    "vue-cli-plugin-vuetify": "~2.5.8"
+  },
+  "type": "module"
 }

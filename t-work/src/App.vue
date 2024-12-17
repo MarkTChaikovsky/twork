@@ -23,10 +23,11 @@ export default {
 
   </div>
      -->
-
-  <div id="app">
-    <router-view />
-  </div>
+  <!-- <v-app> -->
+    <div id="app">
+      <router-view />
+    </div>
+  <!-- </v-app> -->
 
 </template>
 

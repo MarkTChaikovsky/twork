@@ -1,133 +1,158 @@
 <template>
-  <div class="main-container">
-    <div class="container-header">
-      <div class="menu-header">
-        <button> <img alt="Menu Icon"> </button>
-      </div>
-      <div class="user-info" v-if="user">
-        <div class="user-details">
-          <p id="user-name">{{ user.displayName }}</p>
-          <p id="user-token">{{ userToken }}</p>
-        </div>
-        <img id="avatar-photo" :src="userPhotoURL" alt="User Photo" class="avatar">
-      </div>
-      <div class="settings-header">
-        <img class="settings-button" :src="settingsIcon" alt="Settings Icon" @click="goToSettings">
-      </div>
-    </div>
-    <div class="content">
-      <p v-if="user">Logged in as: {{ user.displayName }} ({{ user.email }})</p>
-      <button @click="logout">Logout</button>
-      <button @click="openProjectModal">Create/Join Project</button>
+  <v-app id="inspire">
+    <v-system-bar>
+      <v-spacer></v-spacer>
 
-      <div v-if="projects.length">
-        <h3>Your Projects</h3>
-        <ul>
-          <li v-for="project in projects" :key="project.id">
-            {{ project.projectName }}
-            <button @click="openProject(project.id)">Open Project</button>
-          </li>
-        </ul>
-      </div>
-    </div>
+      <v-icon>mdi-square</v-icon>
 
-    <div v-if="showModal" class="modal">
-      <div class="modal-content">
-        <span class="close" @click="closeProjectModal">&times;</span>
-        <h2>Choose an option</h2>
-        <button @click="goToCreateProject">Create Project</button>
-        <button>Join Project (not implemented)</button>
-      </div>
-    </div>
-  </div>
+      <v-icon>mdi-circle</v-icon>
+
+      <v-icon>mdi-triangle</v-icon>
+    </v-system-bar>
+
+    <v-app-bar>
+      <section>
+
+        <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+
+        <v-btn icon class="ml-auto" color="gray" @click="toggleNotificationDot">
+          <v-badge v-if="showNotificationDot" color="red" dot overlap>
+            <v-icon>mdi-bell</v-icon>
+          </v-badge>
+          <v-icon v-else>mdi-bell</v-icon>
+        </v-btn>
+
+      </section>
+    </v-app-bar>
+
+    <v-navigation-drawer v-model="drawer" temporary>
+      <v-container class="account-info" fluid>
+        <v-row align="center">
+          <v-col cols="3">
+            <v-avatar size="40">
+              <img :src="userPhotoURL" alt="User Avatar">
+            </v-avatar>
+          </v-col>
+          <v-col>
+            <div class="user-details">
+              <strong>{{ user?.displayName || 'Guest' }}</strong>
+              <p class="user-token">{{ userToken || 'No token available' }}</p>
+            </div>
+          </v-col>
+        </v-row>
+      </v-container>
+
+      <!-- Інший контент меню -->
+      <v-divider></v-divider>
+
+      <v-list dense>
+        <v-list-item @click="goToProjects">
+          <v-list-item style="display: flex; align-items: center;">
+            <v-icon class="mr-3">mdi-folder</v-icon>
+            <span>Проекти</span>
+          </v-list-item>
+        </v-list-item>
+
+        <v-list-item @click="goToFriends">
+          <v-list-item style="display: flex; align-items: center;">
+            <v-icon class="mr-3">mdi-account-multiple</v-icon>
+            <span>Друзі</span>
+          </v-list-item>
+        </v-list-item>
+
+        <v-list-item @click="goToSettings">
+          <v-list-item style="display: flex; align-items: center;">
+            <v-icon class="mr-3">mdi-cog</v-icon>
+            <span>Налаштування</span>
+          </v-list-item>
+        </v-list-item>
+      </v-list>
+
+    </v-navigation-drawer>
+
+    <v-main class="bg-grey-lighten-2">
+      <router-view />
+    </v-main>
+  </v-app>
 </template>
 
 <script>
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../../firebase/init.js'
-import defaultAvatar from '@/assets/default-avatar.png'
-import settingsIcon from '@/assets/settings-icon.png'
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { db } from "@/firebase/init";
+import { doc, getDoc } from "firebase/firestore";
+import defaultAvatar from "@/assets/default-avatar.png";
+import ProjectsPage from './ProjectsPage.vue';
 
 export default {
-  data() {
-    return {
-      user: null,
-      userToken: '',
-      userPhotoURL: defaultAvatar,
-      settingsIcon: settingsIcon,
-      projects: [],
-      showModal: false,
-    }
-  },
-  created() {
+  components: { ProjectsPage },
+  setup() {
+    const drawer = ref(false);
+    const showNotificationDot = ref(false);
+    const user = ref(null);
+    const userToken = ref("");
+    const userPhotoURL = ref(defaultAvatar);
+
+    const router = useRouter();
+
     const auth = getAuth();
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        this.user = user;
-        const userRef = doc(db, 'users', user.uid);
-        try {
+
+    const toggleDrawer = () => {
+      drawer.value = !drawer.value;
+    };
+
+    const toggleNotificationDot = () => {
+      showNotificationDot.value = !showNotificationDot.value;
+    };
+
+    const goToProjects = () => {
+      router.push({ name: "projects" });
+    };
+
+    const goToFriends = () => {
+      console.warn("Друзі ще не реалізовані.");
+    };
+
+    const goToSettings = () => {
+      router.push({ name: "settings" });
+    };
+
+
+    onMounted(() => {
+      onAuthStateChanged(auth, async (currentUser) => {
+        if (currentUser) {
+          user.value = currentUser;
+          const userRef = doc(db, "users", currentUser.uid);
           const userDoc = await getDoc(userRef);
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            this.userToken = userData.token;
-            this.userPhotoURL = userData.avatarURL ? userData.avatarURL : defaultAvatar;
-            if (userData.activeProjects) {
-              await this.loadProjects(userData.activeProjects);
-            }
-          } else {
-            console.log('No such document!');
+            userToken.value = userData.token || "No token found";
+            userPhotoURL.value = userData.avatarURL || defaultAvatar;
           }
-        } catch (error) {
-          console.log('Error getting document:', error);
+        } else {
+          router.push({ name: "Login" });
         }
-      } else {
-        this.$router.push({ name: 'Login' });
-      }
+      });
     });
+
+    return {
+      drawer,
+      showNotificationDot,
+      user,
+      userToken,
+      userPhotoURL,
+      toggleDrawer,
+      toggleNotificationDot,
+      goToProjects,
+      goToFriends,
+      goToSettings,
+    };
   },
-  methods: {
-    async loadProjects(projectIds) {
-      const projectPromises = projectIds.map(async (projectId) => {
-        const projectRef = doc(db, 'projects', projectId);
-        const projectDoc = await getDoc(projectRef);
-        if (projectDoc.exists()) {
-          return { id: projectId, ...projectDoc.data() };
-        }
-        return null;
-      });
-      this.projects = (await Promise.all(projectPromises)).filter(project => project !== null);
-    },
-    goToSettings() {
-      this.$router.push({ name: 'settings' });
-    },
-    logout() {
-      const auth = getAuth();
-      signOut(auth).then(() => {
-        this.$router.push({ name: 'Login' });
-      }).catch((error) => {
-        console.log(error.message);
-      });
-    },
-    openProject(projectId) {
-      this.$router.push({ name: 'projectDetails', params: { id: projectId } });
-    },
-    openProjectModal() {
-      this.showModal = true;
-    },
-    closeProjectModal() {
-      this.showModal = false;
-    },
-    goToCreateProject() {
-      this.showModal = false;
-      this.$router.push({ name: 'createProject' });
-    }
-  }
-}
+};
 </script>
 
 <style>
-/* ваші стилі тут */
 html,
 body {
   height: 100%;
@@ -199,23 +224,12 @@ body {
   margin-left: 10px;
 }
 
-.avatar img {
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-}
-
-.user-info div p {
-  margin: 0;
-}
-
 .content {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
 }
 
-/* відображення проектів */
 ul {
   list-style-type: none;
   padding: 0;
@@ -234,7 +248,6 @@ button {
   border: 0;
   padding: 6px;
   border-radius: 10px;
-  width: auto;
 }
 
 button:hover {
@@ -242,8 +255,9 @@ button:hover {
 }
 
 .modal {
-  display: block;
-  /* Показуємо модальне вікно (після зміни стану) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: fixed;
   z-index: 1;
   left: 0;
@@ -251,29 +265,51 @@ button:hover {
   width: 100%;
   height: 100%;
   overflow: auto;
-  background-color: rgb(0, 0, 0);
   background-color: rgba(0, 0, 0, 0.4);
 }
 
-.modal-content {
-  background-color: #fefefe;
-  margin: 15% auto;
+.modal-content-1,
+.modal-join-project-content {
+  background: #fff;
   padding: 20px;
-  border: 1px solid #888;
-  width: 80%;
+  border-radius: 8px;
+  text-align: center;
 }
 
 .close {
-  color: #aaa;
+  cursor: pointer;
+  font-size: 24px;
   float: right;
-  font-size: 28px;
-  font-weight: bold;
+  color: #aaa;
 }
 
-.close:hover,
-.close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
+.close:hover {
+  color: #000;
+}
+
+
+/* дизайн вютіфая */
+
+.account-info {
+  padding: 10px 0;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-token {
+  font-size: 0.8rem;
+  /* Зменшений шрифт */
+  color: grey;
+  /* Сірий колір */
+  margin: 0;
+  /* Прибрати відступи */
+}
+
+.list-title {
+  margin-left: 16px;
+  /* Відступ між текстом і іконкою */
 }
 </style>
